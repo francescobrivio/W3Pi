@@ -143,20 +143,8 @@ int main(int argc, char **argv) {
         // Outputs
         ap_uint<NPUPPI_MAX> masked_fw;
         ap_uint<NPUPPI_MAX> masked_ref;
-        //idx_t slimmed_fw[NPUPPI_SEL];
-        //idx_t slimmed_ref[NPUPPI_SEL];
         Puppi slimmed_fw[NPUPPI_MAX];
         Puppi slimmed_ref[NPUPPI_MAX];
-        //idx_t ordered_idxs_fw[NPUPPI_SEL];
-        //idx_t ordered_idxs_ref[NPUPPI_SEL];
-        idx_t ordered_idxs_fw[NPUPPI_MAX];
-        idx_t ordered_idxs_ref[NPUPPI_MAX];
-        //idx_t ordered_idxs_fw1[NPUPPI_MAX/4], ordered_idxs_fw2[NPUPPI_MAX/4], ordered_idxs_fw3[NPUPPI_MAX/4], ordered_idxs_fw4[NPUPPI_MAX/4];
-        //idx_t ordered_idxs_ref1[NPUPPI_MAX/4], ordered_idxs_ref2[NPUPPI_MAX/4], ordered_idxs_ref3[NPUPPI_MAX/4], ordered_idxs_ref4[NPUPPI_MAX/4];
-        idx_t ordered_idxs_fw1[NPUPPI_MAX/8], ordered_idxs_fw2[NPUPPI_MAX/8], ordered_idxs_fw3[NPUPPI_MAX/8], ordered_idxs_fw4[NPUPPI_MAX/8],
-              ordered_idxs_fw5[NPUPPI_MAX/8], ordered_idxs_fw6[NPUPPI_MAX/8], ordered_idxs_fw7[NPUPPI_MAX/8], ordered_idxs_fw8[NPUPPI_MAX/8];
-        idx_t ordered_idxs_ref1[NPUPPI_MAX/8], ordered_idxs_ref2[NPUPPI_MAX/8], ordered_idxs_ref3[NPUPPI_MAX/8], ordered_idxs_ref4[NPUPPI_MAX/8],
-              ordered_idxs_ref5[NPUPPI_MAX/8], ordered_idxs_ref6[NPUPPI_MAX/8], ordered_idxs_ref7[NPUPPI_MAX/8], ordered_idxs_ref8[NPUPPI_MAX/8];
         Puppi ordered_fw1[NSPLITS] , ordered_fw2[NSPLITS] , ordered_fw3[NSPLITS] , ordered_fw4[NSPLITS],
               ordered_fw5[NSPLITS] , ordered_fw6[NSPLITS] , ordered_fw7[NSPLITS] , ordered_fw8[NSPLITS],
               ordered_fw9[NSPLITS] , ordered_fw10[NSPLITS], ordered_fw11[NSPLITS], ordered_fw12[NSPLITS],
@@ -165,18 +153,12 @@ int main(int argc, char **argv) {
               ordered_ref5[NSPLITS] , ordered_ref6[NSPLITS] , ordered_ref7[NSPLITS] , ordered_ref8[NSPLITS],
               ordered_ref9[NSPLITS] , ordered_ref10[NSPLITS], ordered_ref11[NSPLITS], ordered_ref12[NSPLITS],
               ordered_ref13[NSPLITS], ordered_ref14[NSPLITS], ordered_ref15[NSPLITS], ordered_ref16[NSPLITS];
+        Puppi ordered2_fw[NSUBARR][NSPLITS];
         Puppi merged_fw[NPUPPI_MAX];
         Puppi merged_ref[NPUPPI_MAX];
-        Puppi ordered_fw[NPUPPI_MAX];
-        Puppi ordered_ref[NPUPPI_MAX];
-        Puppi ordered2_fw[NSUBARR][NSPLITS];
-        idx_t selected_idxs_fw[NPUPPI_SEL];
-        idx_t selected_idxs_ref[NPUPPI_SEL];
         Puppi selected_fw[NPUPPI_SEL];
         Puppi selected_ref[NPUPPI_SEL];
-        Puppi final_fw[NPUPPI_SEL];
-        Puppi final_ref[NPUPPI_SEL];
-        cos_t cosphi;
+        cos_t  cosphi;
         cosh_t cosheta;
         mass_t mass_fw;
         mass_t mass_ref;
@@ -731,7 +713,7 @@ int main(int argc, char **argv) {
                 }
                 if (ordered_fw9[i] != ordered_ref9[i])
                 {
-                    std::cout << "---> Different ordered8 at i: " << i << " -> FW: " << ordered_fw9[i] << " REF: " << ordered_ref[i] << std::endl;
+                    std::cout << "---> Different ordered8 at i: " << i << " -> FW: " << ordered_fw9[i] << " REF: " << ordered_ref9[i] << std::endl;
                     //return 1; // FIXME: uncomment when ordering of same pT candidates in FW is fixed
                 }
                 if (ordered_fw10[i] != ordered_ref10[i])
