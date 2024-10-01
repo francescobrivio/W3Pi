@@ -720,7 +720,6 @@ void get_highest_score (w3p_bdt::score_t BDT_scores[NTRIPLETS], w3p_bdt::score_t
 void EventProcessor (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score)
 {
     #pragma HLS ARRAY_PARTITION variable=input complete
-    #pragma HLS ARRAY_PARTITION variable=selected complete
 
     // Mask candidates
     ap_uint<NPUPPI_MAX> masked;
