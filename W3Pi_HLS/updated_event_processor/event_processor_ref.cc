@@ -5,8 +5,8 @@
 
 #include "BDT/conifer.h"
 
-// ---------------------------------
-// Select L1Puppi objects
+// ------------------------------------------------------------------
+// Masker: mask L1Puppi objects that don't pass selections
 void masker_ref (const Puppi input[NPUPPI_MAX], ap_uint<NPUPPI_MAX> & masked)
 {
     masked = 0;
@@ -22,34 +22,8 @@ void masker_ref (const Puppi input[NPUPPI_MAX], ap_uint<NPUPPI_MAX> & masked)
 }
 
 // ------------------------------------------------------------------
-// Slimmer
-void slimmer_ref (const ap_uint<NPUPPI_MAX> masked, idx_t slimmed_idxs[NPUPPI_SEL])
-{
-
-    for (int i = 0; i < NPUPPI_SEL; i++)
-        slimmed_idxs[i] = NPUPPI_SEL + 1;
-        //slimmed_idxs[i] = -1;
-
-    int slim_idx = 0;
-    for (int i = 0; i < NPUPPI_MAX; i++)
-    {
-        if (slim_idx >= NPUPPI_SEL)
-        {
-            break;
-        }
-        else
-        {
-            if (!masked[i])
-            {
-                slimmed_idxs[slim_idx] = i;
-                slim_idx++;
-            }
-        }
-    }
-}
-
-// Replace masked candidates with empty/dummy puppi
-void slimmer2_ref (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> masked, Puppi slimmed[NPUPPI_MAX])
+// Slimmer: replace masked candidates with empty/dummy puppi
+void slimmer_ref (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> masked, Puppi slimmed[NPUPPI_MAX])
 {
     for (int i = 0; i < NPUPPI_MAX; i++)
         slimmed[i].clear();
@@ -64,202 +38,14 @@ void slimmer2_ref (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> mask
 }
 
 // ---------------------------------
-// Order idxs by pT
-struct OrderStruct {
-    idx_t idx;
-    Puppi::pt_t pt;
-};
-
-bool orderComparator (struct OrderStruct a, struct OrderStruct b)
-{
-    return (a.pt > b.pt);
-}
-
-void orderer_ref (const Puppi input[NPUPPI_MAX], const idx_t slimmed_idxs[NPUPPI_SEL], idx_t ordered_idxs[NPUPPI_SEL])
-{
-    // Initialize variables
-    for (unsigned int i = 0; i < NPUPPI_SEL; i++)
-        ordered_idxs[i] = slimmed_idxs[i];
-
-    // Utils inputs
-    struct OrderStruct objects[NPUPPI_SEL];
-
-    // Fill struct to be ordered:
-    for (unsigned int i = 0; i < NPUPPI_SEL; i++)
-    {
-        objects[i].idx = ordered_idxs[i];
-        objects[i].pt  = input[ ordered_idxs[i] ].hwPt;
-    }
-
-    // Order
-    std::stable_sort(objects, objects + NPUPPI_SEL, orderComparator);
-
-    // Copy ordered idxs to output
-    for (unsigned int i = 0; i < NPUPPI_SEL; i++)
-        ordered_idxs[i] = objects[i].idx;
-}
-
-void orderer2_ref (const Puppi slimmed[NPUPPI_MAX], idx_t ordered_idxs[NPUPPI_MAX])
-{
-    // Initialize variables
-    for (int i = 0; i < NPUPPI_MAX; i++)
-        ordered_idxs[i] = i;
-
-    // Utils inputs
-    struct OrderStruct objects[NPUPPI_MAX];
-
-    // Fill struct to be ordered:
-    for (int i = 0; i < NPUPPI_MAX; i++)
-    {
-        objects[i].idx = ordered_idxs[i];
-        objects[i].pt  = slimmed[i].hwPt;
-    }
-
-    // Order
-    std::stable_sort(objects, objects + NPUPPI_MAX, orderComparator);
-
-    // Copy ordered idxs to output
-    for (int i = 0; i < NPUPPI_MAX; i++)
-        ordered_idxs[i] = objects[i].idx;
-}
-
-void orderer3_ref (const Puppi slimmed[NPUPPI_MAX],
-                   idx_t ordered_idxs1[NPUPPI_MAX/4], idx_t ordered_idxs2[NPUPPI_MAX/4],
-                   idx_t ordered_idxs3[NPUPPI_MAX/4], idx_t ordered_idxs4[NPUPPI_MAX/4])
-{
-    // Initialize variables
-    Puppi::pt_t pts1[NPUPPI_MAX/4], pts2[NPUPPI_MAX/4], pts3[NPUPPI_MAX/4], pts4[NPUPPI_MAX/4];
-    for (unsigned int i = 0; i < NPUPPI_MAX/4; i++)
-    {
-        ordered_idxs1[i] = i;
-        ordered_idxs2[i] = i+NPUPPI_MAX/4;
-        ordered_idxs3[i] = i+2*NPUPPI_MAX/4;
-        ordered_idxs4[i] = i+3*NPUPPI_MAX/4;
-
-        pts1[i] = slimmed[i].hwPt;
-        pts2[i] = slimmed[i+NPUPPI_MAX/4].hwPt;
-        pts3[i] = slimmed[i+2*NPUPPI_MAX/4].hwPt;
-        pts4[i] = slimmed[i+3*NPUPPI_MAX/4].hwPt;
-    }
-
-    // Utils inputs
-    struct OrderStruct objects1[NPUPPI_MAX/4], objects2[NPUPPI_MAX/4], objects3[NPUPPI_MAX/4], objects4[NPUPPI_MAX/4];
-
-    // Fill struct to be ordered
-    for (unsigned int i = 0; i < NPUPPI_MAX/4; i++)
-    {
-        objects1[i].idx = ordered_idxs1[i];
-        objects2[i].idx = ordered_idxs2[i];
-        objects3[i].idx = ordered_idxs3[i];
-        objects4[i].idx = ordered_idxs4[i];
-
-        objects1[i].pt  = pts1[i];
-        objects2[i].pt  = pts2[i];
-        objects3[i].pt  = pts3[i];
-        objects4[i].pt  = pts4[i];
-    }
-
-    // Order
-    std::stable_sort(objects1, objects1 + NPUPPI_MAX/4, orderComparator);
-    std::stable_sort(objects2, objects2 + NPUPPI_MAX/4, orderComparator);
-    std::stable_sort(objects3, objects3 + NPUPPI_MAX/4, orderComparator);
-    std::stable_sort(objects4, objects4 + NPUPPI_MAX/4, orderComparator);
-
-    // Copy ordered idxs to output
-    for (unsigned int i = 0; i < NPUPPI_MAX/4; i++)
-    {
-        ordered_idxs1[i] = objects1[i].idx;
-        ordered_idxs2[i] = objects2[i].idx;
-        ordered_idxs3[i] = objects3[i].idx;
-        ordered_idxs4[i] = objects4[i].idx;
-    }
-}
-
-void orderer4_ref (const Puppi slimmed[NPUPPI_MAX],
-                   idx_t ordered_idxs1[NPUPPI_MAX/8], idx_t ordered_idxs2[NPUPPI_MAX/8],
-                   idx_t ordered_idxs3[NPUPPI_MAX/8], idx_t ordered_idxs4[NPUPPI_MAX/8],
-                   idx_t ordered_idxs5[NPUPPI_MAX/8], idx_t ordered_idxs6[NPUPPI_MAX/8],
-                   idx_t ordered_idxs7[NPUPPI_MAX/8], idx_t ordered_idxs8[NPUPPI_MAX/8])
-{
-    // Initialize variables
-    Puppi::pt_t pts1[NPUPPI_MAX/8], pts2[NPUPPI_MAX/8], pts3[NPUPPI_MAX/8], pts4[NPUPPI_MAX/8];
-    Puppi::pt_t pts5[NPUPPI_MAX/8], pts6[NPUPPI_MAX/8], pts7[NPUPPI_MAX/8], pts8[NPUPPI_MAX/8];
-    for (unsigned int i = 0; i < NPUPPI_MAX/8; i++)
-    {
-        ordered_idxs1[i] = i;
-        ordered_idxs2[i] = i+NPUPPI_MAX/8;
-        ordered_idxs3[i] = i+2*NPUPPI_MAX/8;
-        ordered_idxs4[i] = i+3*NPUPPI_MAX/8;
-        ordered_idxs5[i] = i+4*NPUPPI_MAX/8;
-        ordered_idxs6[i] = i+5*NPUPPI_MAX/8;
-        ordered_idxs7[i] = i+6*NPUPPI_MAX/8;
-        ordered_idxs8[i] = i+7*NPUPPI_MAX/8;
-
-        pts1[i] = slimmed[i].hwPt;
-        pts2[i] = slimmed[i+NPUPPI_MAX/8].hwPt;
-        pts3[i] = slimmed[i+2*NPUPPI_MAX/8].hwPt;
-        pts4[i] = slimmed[i+3*NPUPPI_MAX/8].hwPt;
-        pts5[i] = slimmed[i+4*NPUPPI_MAX/8].hwPt;
-        pts6[i] = slimmed[i+5*NPUPPI_MAX/8].hwPt;
-        pts7[i] = slimmed[i+6*NPUPPI_MAX/8].hwPt;
-        pts8[i] = slimmed[i+7*NPUPPI_MAX/8].hwPt;
-    }
-
-    // Utils inputs
-    struct OrderStruct objects1[NPUPPI_MAX/8], objects2[NPUPPI_MAX/8], objects3[NPUPPI_MAX/8], objects4[NPUPPI_MAX/8];
-    struct OrderStruct objects5[NPUPPI_MAX/8], objects6[NPUPPI_MAX/8], objects7[NPUPPI_MAX/8], objects8[NPUPPI_MAX/8];
-
-    // Fill struct to be ordered
-    for (unsigned int i = 0; i < NPUPPI_MAX/8; i++)
-    {
-        objects1[i].idx = ordered_idxs1[i];
-        objects2[i].idx = ordered_idxs2[i];
-        objects3[i].idx = ordered_idxs3[i];
-        objects4[i].idx = ordered_idxs4[i];
-        objects5[i].idx = ordered_idxs5[i];
-        objects6[i].idx = ordered_idxs6[i];
-        objects7[i].idx = ordered_idxs7[i];
-        objects8[i].idx = ordered_idxs8[i];
-
-        objects1[i].pt  = pts1[i];
-        objects2[i].pt  = pts2[i];
-        objects3[i].pt  = pts3[i];
-        objects4[i].pt  = pts4[i];
-        objects5[i].pt  = pts5[i];
-        objects6[i].pt  = pts6[i];
-        objects7[i].pt  = pts7[i];
-        objects8[i].pt  = pts8[i];
-    }
-
-    // Order
-    std::stable_sort(objects1, objects1 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects2, objects2 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects3, objects3 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects4, objects4 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects5, objects5 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects6, objects6 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects7, objects7 + NPUPPI_MAX/8, orderComparator);
-    std::stable_sort(objects8, objects8 + NPUPPI_MAX/8, orderComparator);
-
-    // Copy ordered idxs to output
-    for (unsigned int i = 0; i < NPUPPI_MAX/8; i++)
-    {
-        ordered_idxs1[i] = objects1[i].idx;
-        ordered_idxs2[i] = objects2[i].idx;
-        ordered_idxs3[i] = objects3[i].idx;
-        ordered_idxs4[i] = objects4[i].idx;
-        ordered_idxs5[i] = objects5[i].idx;
-        ordered_idxs6[i] = objects6[i].idx;
-        ordered_idxs7[i] = objects7[i].idx;
-        ordered_idxs8[i] = objects8[i].idx;
-    }
-}
+// Sort slimmed candidates by pT using bitonicSort from bitonic_hybrid.h
 
 bool puppiComparator (Puppi a, Puppi b)
 {
     return (a.hwPt > b.hwPt);
 }
 
+// Split and order 16 arrays of 13 candidates (16 x 13 = 208)
 void orderer7_ref (const Puppi slimmed[NPUPPI_MAX],
                    Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
                    Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
@@ -311,6 +97,7 @@ void orderer7_ref (const Puppi slimmed[NPUPPI_MAX],
     std::stable_sort(ordered16, ordered16 + NSPLITS, puppiComparator);
 }
 
+// Split and order 8 arrays of 26 candidates (8 x 26 = 208)
 void orderer7bis_ref (const Puppi slimmed[NPUPPI_MAX],
                    Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
                    Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
@@ -528,7 +315,7 @@ void EventProcessor_ref (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_s
 
     // Replace masked candidates with dummy
     Puppi slimmed[NPUPPI_MAX];
-    slimmer2_ref(input, masked, slimmed);
+    slimmer_ref(input, masked, slimmed);
 
     // No need for splitting and ordering in reference C++ code: it can be done in one go
 

@@ -118,7 +118,7 @@ struct Puppi {
     friend std::ostream& operator << (std::ostream& os, const Puppi& a)
     {
         //os << a.floatPt() << "/" << a.floatEta() << "/" << a.floatPhi();
-        os << a.floatPt() << ":" << a.floatEta() << "   ";
+        os << a.floatPt() << ":" << a.floatEta() << "  ";
         //os << a.floatPt();
         return os;
     }

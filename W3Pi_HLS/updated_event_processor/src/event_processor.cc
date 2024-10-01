@@ -2,7 +2,7 @@
 #include "bitonic_hybrid.h"
 
 // ------------------------------------------------------------------
-// Mask L1Puppi objects
+// Masker: mask L1Puppi objects that don't pass selections
 void masker (const Puppi input[NPUPPI_MAX], ap_uint<NPUPPI_MAX> & masked)
 {
     #pragma HLS ARRAY_PARTITION variable=input complete
@@ -22,34 +22,9 @@ void masker (const Puppi input[NPUPPI_MAX], ap_uint<NPUPPI_MAX> & masked)
     }
 }
 
-
 // ------------------------------------------------------------------
-// Slimmer
-void slimmer (const ap_uint<NPUPPI_MAX> masked, idx_t slimmed_idxs[NPUPPI_SEL])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed_idxs complete
-
-    LOOP_SLIMMER_CLEAR: for (int i = 0; i < NPUPPI_SEL; i++)
-    {
-        #pragma HLS UNROLL
-        slimmed_idxs[i] = NPUPPI_SEL + 1;
-    }
-
-    unsigned int slim_idx = 0;
-    LOOP_SLIMMER_FILL: for (unsigned int i = 0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS UNROLL
-        bool update = ( (slim_idx < NPUPPI_SEL) && !masked[i] );
-        slimmed_idxs[slim_idx] = update ? idx_t(i) : slimmed_idxs[slim_idx];
-        slim_idx = update ? slim_idx + 1 : slim_idx;
-
-        //slimmed_idxs[slim_idx] = (!masked[i]) ? idx_t(i) : slimmed_idxs[slim_idx];
-        //slim_idx = (!masked[i]) ? slim_idx + 1 : slim_idx;
-    }
-}
-
-// Replace masked candidates with empty/dummy puppi
-void slimmer2 (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> masked, Puppi slimmed[NPUPPI_MAX])
+// Slimmer: replace masked candidates with empty/dummy puppi
+void slimmer (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> masked, Puppi slimmed[NPUPPI_MAX])
 {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=slimmed complete
@@ -65,326 +40,8 @@ void slimmer2 (const Puppi input[NPUPPI_MAX], const ap_uint<NPUPPI_MAX> masked, 
 }
 
 // ------------------------------------------------------------------
-// Order masked indexes
-// bubbleSort algo from https://www.geeksforgeeks.org/bubble-sort-in-cpp/
-void bubbleSort (Puppi::pt_t pts[NPUPPI_SEL], idx_t ordered_idxs[NPUPPI_SEL])
-{
-    #pragma HLS PIPELINE II=13
-
-    LOOP_BS1: for (unsigned int i = 0; i < NPUPPI_SEL - 1; i++)
-    {
-        LOOP_BS2: for (unsigned int j = 0; j < NPUPPI_SEL - 1; j++)
-        {
-            if ( (j < NPUPPI_SEL-1-i) )
-            {
-                Puppi::pt_t tmp_pt = pts[j];
-                idx_t tmp_idx = ordered_idxs[j];
-
-                bool swap = (pts[j] < pts[j+1]);
-
-                pts[j]   = swap ? pts[j+1] : tmp_pt;
-                pts[j+1] = swap ? tmp_pt : pts[j+1] ;
-
-                ordered_idxs[j]   = swap ? ordered_idxs[j+1] : tmp_idx;
-                ordered_idxs[j+1] = swap ? tmp_idx : ordered_idxs[j+1];
-            }
-        }
-    }
-}
-
-// Same as bubbleSort but from slimmer2
-void bubbleSort2 (Puppi::pt_t pts[NPUPPI_MAX], idx_t ordered_idxs[NPUPPI_MAX])
-{
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    LOOP_BS1: for (unsigned int i = 0; i < NPUPPI_MAX - 1; i++)
-    {
-        LOOP_BS2: for (unsigned int j = 0; j < NPUPPI_MAX - 1; j++)
-        {
-            if ( (j < NPUPPI_MAX-1-i) )
-            {
-                Puppi::pt_t tmp_pt = pts[j];
-                idx_t tmp_idx = ordered_idxs[j];
-
-                bool swap = (pts[j] < pts[j+1]);
-
-                pts[j]   = swap ? pts[j+1] : tmp_pt;
-                pts[j+1] = swap ? tmp_pt : pts[j+1] ;
-
-                ordered_idxs[j]   = swap ? ordered_idxs[j+1] : tmp_idx;
-                ordered_idxs[j+1] = swap ? tmp_idx : ordered_idxs[j+1];
-            }
-        }
-    }
-}
-
-// Same as bubbleSort2 but split into 4 arrays of 52 ( = 208/4) elements
-void bubbleSort3 (Puppi::pt_t pts[NPUPPI_MAX/4], idx_t ordered_idxs[NPUPPI_MAX/4])
-{
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    LOOP_BS1: for (unsigned int i = 0; i < NPUPPI_MAX/4 - 1; i++)
-    {
-        LOOP_BS2: for (unsigned int j = 0; j < NPUPPI_MAX/4 - 1; j++)
-        {
-            if ( (j < NPUPPI_MAX/4 -1-i) )
-            {
-                Puppi::pt_t tmp_pt = pts[j];
-                idx_t tmp_idx = ordered_idxs[j];
-
-                bool swap = (pts[j] < pts[j+1]);
-
-                pts[j]   = swap ? pts[j+1] : tmp_pt;
-                pts[j+1] = swap ? tmp_pt : pts[j+1] ;
-
-                ordered_idxs[j]   = swap ? ordered_idxs[j+1] : tmp_idx;
-                ordered_idxs[j+1] = swap ? tmp_idx : ordered_idxs[j+1];
-            }
-        }
-    }
-}
-
-// Same as bubbleSort2 but split into 8 arrays of 26 ( = 208/8) elements
-void bubbleSort4 (Puppi::pt_t pts[NPUPPI_MAX/8], idx_t ordered_idxs[NPUPPI_MAX/8])
-{
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    LOOP_BS1: for (unsigned int i = 0; i < NPUPPI_MAX/8 - 1; i++)
-    {
-        LOOP_BS2: for (unsigned int j = 0; j < NPUPPI_MAX/8 - 1; j++)
-        {
-            if ( (j < NPUPPI_MAX/8 -1-i) )
-            {
-                Puppi::pt_t tmp_pt = pts[j];
-                idx_t tmp_idx = ordered_idxs[j];
-
-                bool swap = (pts[j] < pts[j+1]);
-
-                pts[j]   = swap ? pts[j+1] : tmp_pt;
-                pts[j+1] = swap ? tmp_pt : pts[j+1] ;
-
-                ordered_idxs[j]   = swap ? ordered_idxs[j+1] : tmp_idx;
-                ordered_idxs[j+1] = swap ? tmp_idx : ordered_idxs[j+1];
-            }
-        }
-    }
-}
-
-// Same as bubbleSort2 but split into 16 arrays of 13 ( = 208/16) elements
-void bubbleSort8 (Puppi ordered[NSPLITS])
-{
-    #pragma HLS ARRAY_PARTITION variable=ordered complete
-
-    LOOP_BS1: for (unsigned int i = 0; i < NSPLITS - 1; i++)
-    {
-        LOOP_BS2: for (unsigned int j = 0; j < NSPLITS - 1; j++)
-        {
-            if ( (j < NSPLITS -1-i) )
-            {
-                Puppi tmp_puppi = ordered[j];
-                bool swap = (ordered[j].hwPt < ordered[j+1].hwPt);
-                ordered[j]   = swap ? ordered[j+1] : tmp_puppi;
-                ordered[j+1] = swap ? tmp_puppi : ordered[j+1];
-            }
-        }
-    }
-}
-
-// Order idxs by pT
-void orderer (const Puppi input[NPUPPI_MAX], const idx_t slimmed_idxs[NPUPPI_SEL], idx_t ordered_idxs[NPUPPI_SEL])
-{
-    #pragma HLS ARRAY_PARTITION variable=input complete
-    #pragma HLS ARRAY_PARTITION variable=slimmed_idxs complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    Puppi::pt_t pts[NPUPPI_SEL];
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-
-    // Pre-ordering pTs and idxs
-    LOOP_ORDERER_PRE: for (unsigned int i=0; i < NPUPPI_SEL; i++)
-    {
-        #pragma HLS UNROLL
-        pts[i] = input[ slimmed_idxs[i] ].hwPt;
-        ordered_idxs[i] = slimmed_idxs[i];
-    }
-
-    // Sort pts and indexes
-    bubbleSort(pts, ordered_idxs);
-}
-
-// Same ar orderer but from slimmer2  ---> FAILS when trying to order 208 elements!
-void orderer2 (const Puppi slimmed[NPUPPI_MAX], idx_t ordered_idxs[NPUPPI_MAX])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    Puppi::pt_t pts[NPUPPI_MAX];
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-
-    // Pre-ordering pTs and idxs
-    LOOP_ORDERER_PRE: for (unsigned int i=0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS UNROLL
-        pts[i] = slimmed[i].hwPt;
-        ordered_idxs[i] = i;
-    }
-
-    // Sort pts and indexes
-    bubbleSort2(pts, ordered_idxs);
-}
-
-// Same as orderer2 but split into 4 arrays of 52 elements (4 x 52 = 208)
-void orderer3 (const Puppi slimmed[NPUPPI_MAX],
-               idx_t ordered_idxs1[NPUPPI_MAX/4], idx_t ordered_idxs2[NPUPPI_MAX/4],
-               idx_t ordered_idxs3[NPUPPI_MAX/4], idx_t ordered_idxs4[NPUPPI_MAX/4])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs1 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs2 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs3 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs4 complete
-
-    Puppi::pt_t pts[NPUPPI_MAX];
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-
-    idx_t ordered_idxs[NPUPPI_MAX];
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    // Pre-ordering pTs and idxs
-    LOOP_ORDERER_PRE: for (unsigned int i=0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS UNROLL
-        pts[i] = slimmed[i].hwPt;
-        ordered_idxs[i] = i;
-    }
-
-    Puppi::pt_t pts1[NPUPPI_MAX/4], pts2[NPUPPI_MAX/4], pts3[NPUPPI_MAX/4], pts4[NPUPPI_MAX/4];
-    #pragma HLS ARRAY_PARTITION variable=pts1 complete
-    #pragma HLS ARRAY_PARTITION variable=pts2 complete
-    #pragma HLS ARRAY_PARTITION variable=pts3 complete
-    #pragma HLS ARRAY_PARTITION variable=pts4 complete
-
-    // Split ordered idxs in 4 arrays
-    LOOP_ORDERER_SLICE: for (unsigned int i=0; i < NPUPPI_MAX/4; i++)
-    {
-        #pragma HLS UNROLL
-
-        ordered_idxs1[i] = ordered_idxs[i];
-        ordered_idxs2[i] = ordered_idxs[i+NPUPPI_MAX/4];
-        ordered_idxs3[i] = ordered_idxs[i+2*NPUPPI_MAX/4];
-        ordered_idxs4[i] = ordered_idxs[i+3*NPUPPI_MAX/4];
-
-        pts1[i] = pts[i];
-        pts2[i] = pts[i+NPUPPI_MAX/4];
-        pts3[i] = pts[i+2*NPUPPI_MAX/4];
-        pts4[i] = pts[i+3*NPUPPI_MAX/4];
-    }
-
-    // Sort pts and indexes
-    bubbleSort3(pts1, ordered_idxs1);
-    bubbleSort3(pts2, ordered_idxs2);
-    bubbleSort3(pts3, ordered_idxs3);
-    bubbleSort3(pts4, ordered_idxs4);
-}
-
-// Same as orderer2 but split into 8 arrays of 26 elements (8 x 26 = 208)
-void orderer4 (const Puppi slimmed[NPUPPI_MAX],
-               idx_t ordered_idxs1[NPUPPI_MAX/8], idx_t ordered_idxs2[NPUPPI_MAX/8],
-               idx_t ordered_idxs3[NPUPPI_MAX/8], idx_t ordered_idxs4[NPUPPI_MAX/8],
-               idx_t ordered_idxs5[NPUPPI_MAX/8], idx_t ordered_idxs6[NPUPPI_MAX/8],
-               idx_t ordered_idxs7[NPUPPI_MAX/8], idx_t ordered_idxs8[NPUPPI_MAX/8])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs1 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs2 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs3 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs4 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs5 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs6 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs7 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs8 complete
-
-    Puppi::pt_t pts[NPUPPI_MAX];
-    #pragma HLS ARRAY_PARTITION variable=pts complete
-
-    idx_t ordered_idxs[NPUPPI_MAX];
-    #pragma HLS ARRAY_PARTITION variable=ordered_idxs complete
-
-    // Pre-ordering pTs and idxs
-    LOOP_ORDERER_PRE: for (unsigned int i=0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS UNROLL
-        pts[i] = slimmed[i].hwPt;
-        ordered_idxs[i] = i;
-    }
-
-    Puppi::pt_t pts1[NPUPPI_MAX/8], pts2[NPUPPI_MAX/8], pts3[NPUPPI_MAX/8], pts4[NPUPPI_MAX/8];
-    Puppi::pt_t pts5[NPUPPI_MAX/8], pts6[NPUPPI_MAX/8], pts7[NPUPPI_MAX/8], pts8[NPUPPI_MAX/8];
-    #pragma HLS ARRAY_PARTITION variable=pts1 complete
-    #pragma HLS ARRAY_PARTITION variable=pts2 complete
-    #pragma HLS ARRAY_PARTITION variable=pts3 complete
-    #pragma HLS ARRAY_PARTITION variable=pts4 complete
-    #pragma HLS ARRAY_PARTITION variable=pts5 complete
-    #pragma HLS ARRAY_PARTITION variable=pts6 complete
-    #pragma HLS ARRAY_PARTITION variable=pts7 complete
-    #pragma HLS ARRAY_PARTITION variable=pts8 complete
-
-    // Split ordered idxs in 8 arrays
-    LOOP_ORDERER_SLICE: for (unsigned int i=0; i < NPUPPI_MAX/8; i++)
-    {
-        #pragma HLS UNROLL
-
-        ordered_idxs1[i] = ordered_idxs[i];
-        ordered_idxs2[i] = ordered_idxs[i+NPUPPI_MAX/8];
-        ordered_idxs3[i] = ordered_idxs[i+2*NPUPPI_MAX/8];
-        ordered_idxs4[i] = ordered_idxs[i+3*NPUPPI_MAX/8];
-        ordered_idxs5[i] = ordered_idxs[i+4*NPUPPI_MAX/8];
-        ordered_idxs6[i] = ordered_idxs[i+5*NPUPPI_MAX/8];
-        ordered_idxs7[i] = ordered_idxs[i+6*NPUPPI_MAX/8];
-        ordered_idxs8[i] = ordered_idxs[i+7*NPUPPI_MAX/8];
-
-        pts1[i] = pts[i];
-        pts2[i] = pts[i+NPUPPI_MAX/8];
-        pts3[i] = pts[i+2*NPUPPI_MAX/8];
-        pts4[i] = pts[i+3*NPUPPI_MAX/8];
-        pts5[i] = pts[i+4*NPUPPI_MAX/8];
-        pts6[i] = pts[i+5*NPUPPI_MAX/8];
-        pts7[i] = pts[i+6*NPUPPI_MAX/8];
-        pts8[i] = pts[i+7*NPUPPI_MAX/8];
-    }
-
-    // Sort pts and indexes
-    bubbleSort4(pts1, ordered_idxs1);
-    bubbleSort4(pts2, ordered_idxs2);
-    bubbleSort4(pts3, ordered_idxs3);
-    bubbleSort4(pts4, ordered_idxs4);
-    bubbleSort4(pts5, ordered_idxs5);
-    bubbleSort4(pts6, ordered_idxs6);
-    bubbleSort4(pts7, ordered_idxs7);
-    bubbleSort4(pts8, ordered_idxs8);
-}
-
-// Use bitonicSort from bitonic_hybrid.h
-void orderer5 (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NPUPPI_MAX])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered complete
-
-    // Copy-paste input to output
-    LOOP_ORDERER5_COPY: for (unsigned int i=0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS UNROLL
-        ordered[i] = slimmed[i];
-    }
-
-    // Do the sorting
-    hybridBitonicSort::bitonicSorter<Puppi, NPUPPI_MAX, 0>::run(ordered, 0);
-}
-
-// Split in 16 ordered arrays of 13 candidates (16 x 13 = 208)
+// Sort slimmed candidates by pT using bitonicSort from bitonic_hybrid.h
+// Split and order 16 arrays of 13 candidates (16 x 13 = 208)
 void orderer7 (const Puppi slimmed[NPUPPI_MAX],
                Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
                Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
@@ -454,7 +111,7 @@ void orderer7 (const Puppi slimmed[NPUPPI_MAX],
     hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, false>::run(ordered16, 0);
 }
 
-// Same as orderer7 but split in 8 arrays of 26
+// Split and order 8 arrays of 26 candidates (8 x 26 = 208)
 void orderer7bis (const Puppi slimmed[NPUPPI_MAX],
                   Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
                   Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
@@ -496,94 +153,7 @@ void orderer7bis (const Puppi slimmed[NPUPPI_MAX],
     hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered8, 0);
 }
 
-// order a single sub-array
-void single_orderer (Puppi ordered[NSPLITS])
-{
-    #pragma HLS ARRAY_PARTITION variable=ordered complete
-    hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered, 0);
-}
-
-// Same as orderer7bis but use single_orderer
-void orderer7c (const Puppi slimmed[NPUPPI_MAX],
-                Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
-                Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
-                Puppi ordered5 [NSPLITS], Puppi ordered6 [NSPLITS],
-                Puppi ordered7 [NSPLITS], Puppi ordered8 [NSPLITS])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed   complete
-    #pragma HLS ARRAY_PARTITION variable=ordered1  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered2  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered3  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered4  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered5  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered6  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered7  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered8  complete
-
-    // Split in 8 arrays
-    LOOP_ORDERER7_SPLIT: for (unsigned int i=0; i < NSPLITS; i++)
-    {
-        #pragma HLS UNROLL
-        ordered1[i] = slimmed[i];
-        ordered2[i] = slimmed[i+NSPLITS];
-        ordered3[i] = slimmed[i+2*NSPLITS];
-        ordered4[i] = slimmed[i+3*NSPLITS];
-        ordered5[i] = slimmed[i+4*NSPLITS];
-        ordered6[i] = slimmed[i+5*NSPLITS];
-        ordered7[i] = slimmed[i+6*NSPLITS];
-        ordered8[i] = slimmed[i+7*NSPLITS];
-    }
-
-    // Sort arrays
-    single_orderer(ordered1);
-    single_orderer(ordered2);
-    single_orderer(ordered3);
-    single_orderer(ordered4);
-    single_orderer(ordered5);
-    single_orderer(ordered6);
-    single_orderer(ordered7);
-    single_orderer(ordered8);
-}
-
-// Order all 208 elements at once
-void orderer7d (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NPUPPI_MAX])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered  complete
-
-    LOOP_ORDERER7D: for (unsigned int i=0; i < NPUPPI_MAX; i++)
-    {
-        #pragma HLS unroll
-        ordered[i] = slimmed[i];
-    }
-    hybridBitonicSort::bitonicSorter<Puppi, NPUPPI_MAX, 0, true>::run(ordered, 0);
-}
-
-void orderer7e (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NSUBARR][NSPLITS])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered complete dim=2
-
-    // Split in 8 arrays
-    LOOP_ORDERER7E_FILL: for (unsigned int i=0; i < NSPLITS; i++)
-    {
-        #pragma HLS UNROLL
-        ordered[0][i] = slimmed[i];
-        ordered[1][i] = slimmed[i+NSPLITS];
-        ordered[2][i] = slimmed[i+2*NSPLITS];
-        ordered[3][i] = slimmed[i+3*NSPLITS];
-        ordered[4][i] = slimmed[i+4*NSPLITS];
-        ordered[5][i] = slimmed[i+5*NSPLITS];
-        ordered[6][i] = slimmed[i+6*NSPLITS];
-        ordered[7][i] = slimmed[i+7*NSPLITS];
-    }
-
-    LOOP_ORDERER7E_SORT: for (unsigned int i=0; i < NSUBARR; i++)
-    {
-        hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i], 0);
-    }
-}
-
+// Sort in pairs the split arrays
 void orderer7f (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NSUBARR][NSPLITS])
 {
     #pragma HLS ARRAY_PARTITION variable=slimmed complete
@@ -610,106 +180,6 @@ void orderer7f (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NSUBARR][NSPLITS]
         hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i+1], 0);
     }
 }
-
-void orderer7g (const Puppi slimmed[NPUPPI_MAX], Puppi ordered[NSUBARR][NSPLITS])
-// II Violation! due to limited memory ports (II = 1). Please consider using a memory core with more ports or partitioning the array
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed complete
-    #pragma HLS ARRAY_PARTITION variable=ordered complete dim=0
-
-    // Split in 8 arrays
-    LOOP_ORDERER7E_FILL: for (unsigned int i=0; i < NSPLITS; i++)
-    {
-        #pragma HLS UNROLL
-        ordered[0][i] = slimmed[i];
-        ordered[1][i] = slimmed[i+NSPLITS];
-        ordered[2][i] = slimmed[i+2*NSPLITS];
-        ordered[3][i] = slimmed[i+3*NSPLITS];
-        ordered[4][i] = slimmed[i+4*NSPLITS];
-        ordered[5][i] = slimmed[i+5*NSPLITS];
-        ordered[6][i] = slimmed[i+6*NSPLITS];
-        ordered[7][i] = slimmed[i+7*NSPLITS];
-    }
-
-    LOOP_ORDERER7E_SORT: for (unsigned int i = 0; i < NSUBARR/4; i++)
-    {
-        hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i]  , 0);
-        hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i+1], 0);
-        hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i+2], 0);
-        hybridBitonicSort::bitonicSorter<Puppi, NSPLITS, 0, true>::run(ordered[i+3], 0);
-    }
-}
-
-// Same as orderer7 but using bubbleSort8
-void orderer8 (const Puppi slimmed[NPUPPI_MAX],
-               Puppi ordered1 [NSPLITS], Puppi ordered2 [NSPLITS],
-               Puppi ordered3 [NSPLITS], Puppi ordered4 [NSPLITS],
-               Puppi ordered5 [NSPLITS], Puppi ordered6 [NSPLITS],
-               Puppi ordered7 [NSPLITS], Puppi ordered8 [NSPLITS],
-               Puppi ordered9 [NSPLITS], Puppi ordered10[NSPLITS],
-               Puppi ordered11[NSPLITS], Puppi ordered12[NSPLITS],
-               Puppi ordered13[NSPLITS], Puppi ordered14[NSPLITS],
-               Puppi ordered15[NSPLITS], Puppi ordered16[NSPLITS])
-{
-    #pragma HLS ARRAY_PARTITION variable=slimmed   complete
-    #pragma HLS ARRAY_PARTITION variable=ordered1  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered2  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered3  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered4  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered5  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered6  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered7  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered8  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered9  complete
-    #pragma HLS ARRAY_PARTITION variable=ordered10 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered11 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered12 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered13 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered14 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered15 complete
-    #pragma HLS ARRAY_PARTITION variable=ordered16 complete
-
-    // Split in 8 arrays
-    LOOP_ORDERER8_SPLIT: for (unsigned int i=0; i < NSPLITS; i++)
-    {
-        #pragma HLS UNROLL
-        ordered1 [i] = slimmed[i];
-        ordered2 [i] = slimmed[i+NSPLITS];
-        ordered3 [i] = slimmed[i+2*NSPLITS];
-        ordered4 [i] = slimmed[i+3*NSPLITS];
-        ordered5 [i] = slimmed[i+4*NSPLITS];
-        ordered6 [i] = slimmed[i+5*NSPLITS];
-        ordered7 [i] = slimmed[i+6*NSPLITS];
-        ordered8 [i] = slimmed[i+7*NSPLITS];
-        ordered9 [i] = slimmed[i+8*NSPLITS];
-        ordered10[i] = slimmed[i+9*NSPLITS];
-        ordered11[i] = slimmed[i+10*NSPLITS];
-        ordered12[i] = slimmed[i+11*NSPLITS];
-        ordered13[i] = slimmed[i+12*NSPLITS];
-        ordered14[i] = slimmed[i+13*NSPLITS];
-        ordered15[i] = slimmed[i+14*NSPLITS];
-        ordered16[i] = slimmed[i+15*NSPLITS];
-    }
-
-    // Sort arrays
-    bubbleSort8(ordered1 );
-    bubbleSort8(ordered2 );
-    bubbleSort8(ordered3 );
-    bubbleSort8(ordered4 );
-    bubbleSort8(ordered5 );
-    bubbleSort8(ordered6 );
-    bubbleSort8(ordered7 );
-    bubbleSort8(ordered8 );
-    bubbleSort8(ordered9 );
-    bubbleSort8(ordered10);
-    bubbleSort8(ordered11);
-    bubbleSort8(ordered12);
-    bubbleSort8(ordered13);
-    bubbleSort8(ordered14);
-    bubbleSort8(ordered15);
-    bubbleSort8(ordered16);
-}
-
 
 // ------------------------------------------------------------------
 // Utils for merge-sorting
@@ -1247,7 +717,7 @@ void get_highest_score (w3p_bdt::score_t BDT_scores[NTRIPLETS], w3p_bdt::score_t
 
 // ------------------------------------------------------------------
 // Full EventProcessor
-void EventProcessor (const Puppi input[NPUPPI_MAX], Puppi selected[NPUPPI_SEL])
+void EventProcessor (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score)
 {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=selected complete
@@ -1258,7 +728,7 @@ void EventProcessor (const Puppi input[NPUPPI_MAX], Puppi selected[NPUPPI_SEL])
 
     // Replace masked candidates with dummy
     Puppi slimmed[NPUPPI_MAX];
-    slimmer2(input, masked, slimmed);
+    slimmer(input, masked, slimmed);
 
     // Split in arrays and sort them according to pT
     Puppi ordered1[NSPLITS] , ordered2[NSPLITS] , ordered3[NSPLITS] , ordered4[NSPLITS] ,
@@ -1280,7 +750,20 @@ void EventProcessor (const Puppi input[NPUPPI_MAX], Puppi selected[NPUPPI_SEL])
            merged);
 
     // Select only highest pT ordered-candidates
+    Puppi selected[NPUPPI_SEL];
+    #pragma HLS ARRAY_PARTITION variable=selected complete
     selector(merged, selected);
+
+    // Get inputs for each triplet
+    w3p_bdt::input_t BDT_inputs[NTRIPLETS][w3p_bdt::n_features];
+    get_event_inputs(selected, BDT_inputs);
+
+    // Get BDT score for each triplet
+    w3p_bdt::score_t BDT_scores[NTRIPLETS];
+    get_event_scores(BDT_inputs, BDT_scores);
+
+    // Get highest BDT score among triplets
+    get_highest_score(BDT_scores, max_score);
 }
 
 // EventProcessor7bis - same as event processor, but with 8 arrays
@@ -1294,7 +777,7 @@ void EventProcessor7bis (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_s
 
     // Replace masked candidates with dummy
     Puppi slimmed[NPUPPI_MAX];
-    slimmer2(input, masked, slimmed);
+    slimmer(input, masked, slimmed);
 
     // Split in arrays and sort them according to pT
     Puppi ordered1[NSPLITS], ordered2[NSPLITS], ordered3[NSPLITS], ordered4[NSPLITS],
@@ -1337,7 +820,7 @@ void EventProcessor7f (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_sco
 
     // Replace masked candidates with dummy
     Puppi slimmed[NPUPPI_MAX];
-    slimmer2(input, masked, slimmed);
+    slimmer(input, masked, slimmed);
 
     // Split in arrays and sort them according to pT
     // Make 2D array of [NSUBARR]x[NSPLITS] = [8]x[26] = 208 for ordering and merging
