@@ -8,6 +8,7 @@
 #include "math.h"
 
 #define NPUPPI_MAX 208                    // Max number of input puppi candidates (208 from Puppi)
+#define NISO_MAX 12
 #define NSUBARR 8                         // Number of sub-arrays
 #define NSPLITS ( NPUPPI_MAX / NSUBARR )  // Dimention of each sub-array
 #define NPUPPI_SEL 7                      // Number of selected non-masked ordered candidates

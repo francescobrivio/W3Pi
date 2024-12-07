@@ -3,9 +3,6 @@
 
 #include "data.h"
 
-#define NPUPPI_MAX 216
-#define NISO_MAX 12
-
 inline dr2_t float_dr_to_ap_dr2(float dr) {
     return dr2_t(round(pow(dr/Puppi::ETAPHI_LSB,2)));
 }
