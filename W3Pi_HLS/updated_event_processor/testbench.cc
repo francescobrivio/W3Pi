@@ -28,7 +28,8 @@
 //  100 : EventProcessor
 //  101 : EventProcessor7bis
 //  102 : EventProcessor7f
-#define DUT 102
+//  200 : compute_isolated_l1t
+#define DUT 200
 
 // Pretty print of array
 template<typename T>
@@ -474,6 +475,10 @@ int main(int argc, char **argv) {
             EventProcessor7f(inputs, max_score_fw);
             EventProcessor_ref(inputs, max_score_ref);
         }
+        else if (DUT == 200)
+        {
+            std::cout << "compute_isolated_l1t test not yet implemented!!!" << std::endl;
+        }
 
         // Post calls printout
         if (OUTPUT_DEBUG)
@@ -641,6 +646,10 @@ int main(int argc, char **argv) {
                 std::cout << "  Max score:" << std::endl;
                 std::cout << "   FW : " << max_score_fw << std::endl;
                 std::cout << "   REF: " << max_score_ref << std::endl;
+            }
+            else if (DUT == 200)
+            {
+                std::cout << "compute_isolated_l1t test not yet implemented!!!" << std::endl;
             }
         }
 
@@ -942,6 +951,10 @@ int main(int argc, char **argv) {
                 std::cout << "---> EP Different -> FW: " << max_score_fw << " REF: " << max_score_ref << std::endl;
                 //return 1; // FIXME: uncomment when ordering and invariant mass kaernels are fixed
             }
+        }
+        else if (DUT == 200)
+        {
+            std::cout << "compute_isolated_l1t test not yet implemented!!!" << std::endl;
         }
 
     } // end loop on data chunks

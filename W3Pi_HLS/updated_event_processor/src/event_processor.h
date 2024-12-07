@@ -50,7 +50,12 @@ void get_highest_score (w3p_bdt::score_t BDT_scores[NTRIPLETS], w3p_bdt::score_t
 void EventProcessor    (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
 void EventProcessor7bis(const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
 void EventProcessor7f  (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
-
+// ---------------------
+// -- DeltaR methods ---
+// ---------------------
+ap_int<Puppi::eta_t::width+1> deltaEta (Puppi::eta_t eta1, Puppi::eta_t eta2);
+inline dr2_t deltaR2 (const Puppi & p1, const Puppi & p2);
+inline dr2_t deltaR2_slow (const Puppi & p1, const Puppi & p2);
 // ---------------------
 // ----- REFERENCE -----
 // ---------------------

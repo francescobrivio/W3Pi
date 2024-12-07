@@ -20,10 +20,14 @@ open_project -reset "proj_v1"
 #set_top get_highest_score
 #set_top EventProcessor
 #set_top EventProcessor7bis
-set_top EventProcessor7f
+#set_top EventProcessor7f
+set_top compute_isolated_l1t
 
 # Load source code for synthesis
 add_files src/event_processor.cc
+add_files src/isolation.cc
+add_files src/best_seed.cc
+add_files src/sum_reduce.cc
 
 # Load source code for the testbench
 #  - add `-cflags "-DON_W3P"` to testbench --> not sure what for
@@ -49,7 +53,7 @@ create_clock -period 5
 
 # Run
 csim_design
-#csynth_design
+csynth_design
 #export_design -flow syn -format xo
 #export_design -flow impl -format ip_catalog -rtl vhdl
 exit
