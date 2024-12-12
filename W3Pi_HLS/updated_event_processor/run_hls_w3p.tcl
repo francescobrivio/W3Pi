@@ -21,7 +21,8 @@ open_project -reset "proj_v1"
 #set_top EventProcessor
 #set_top EventProcessor7bis
 #set_top EventProcessor7f
-set_top compute_isolated_l1t
+#set_top compute_isolated_l1t
+set_top calculate_iso
 
 # Load source code for synthesis
 add_files src/event_processor.cc

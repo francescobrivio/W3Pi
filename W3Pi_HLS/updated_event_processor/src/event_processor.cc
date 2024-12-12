@@ -1,5 +1,7 @@
 #include "event_processor.h"
 #include "bitonic_hybrid.h"
+#include "isolation.h"
+#include "data.h"
 
 // ------------------------------------------------------------------
 // Masker: mask L1Puppi objects that don't pass selections
@@ -834,6 +836,11 @@ void EventProcessor7f (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_sco
     Puppi selected[NPUPPI_SEL];
     #pragma HLS ARRAY_PARTITION variable=selected complete
     selector(merged, selected);
+
+    // Calculate isolation
+    Puppi::pt_t selected_iso[NPUPPI_SEL];
+    #pragma HLS ARRAY_PARTITION variable=selected_iso complete
+    calculate_iso(selected, input, selected_iso);
 
     // Get inputs for each triplet
     w3p_bdt::input_t BDT_inputs[NTRIPLETS][w3p_bdt::n_features];

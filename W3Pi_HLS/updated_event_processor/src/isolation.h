@@ -11,5 +11,9 @@ inline float ap_dr2_to_float_dr(dr2_t dr2) {
 }
 
 void compute_isolated_l1t(const Puppi in[NPUPPI_MAX], Puppi out[NISO_MAX], Puppi::pt_t out_absiso[NISO_MAX]) ;
+void compute_isolated_l1t_parametrized_cut(const Puppi in[NPUPPI_MAX], Puppi out[NISO_MAX], Puppi::pt_t out_absiso[NISO_MAX]) ;
+void compute_isolated_l1t_no_cut(const Puppi in[NPUPPI_MAX], Puppi out[NISO_MAX], Puppi::pt_t out_absiso[NISO_MAX]) ;
+
+void calculate_iso(const Puppi selected[NPUPPI_SEL], const Puppi particles[NPUPPI_MAX], Puppi::pt_t out_slected_iso[NPUPPI_SEL]);
 
 #endif
