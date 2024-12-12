@@ -21,18 +21,17 @@ open_project -reset "proj_v1"
 #set_top EventProcessor
 #set_top EventProcessor7bis
 #set_top EventProcessor7f
-#set_top compute_isolated_l1t
 set_top calculate_iso
 
 # Load source code for synthesis
 add_files src/event_processor.cc
 add_files src/isolation.cc
-add_files src/best_seed.cc
 add_files src/sum_reduce.cc
 
 # Load source code for the testbench
 #  - add `-cflags "-DON_W3P"` to testbench --> not sure what for
 add_files -tb event_processor_ref.cc
+add_files -tb isolation_ref.cc
 add_files -tb testbench.cc
 add_files -tb ../data/Puppi_w3p_PU200.dump
 add_files -tb BDT/conifer_binary_featV4_finalFit_v5.json
