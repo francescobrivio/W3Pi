@@ -22,6 +22,7 @@ open_project -reset "proj_v1"
 #set_top EventProcessor7bis
 # set_top EventProcessor7f
 set_top calculate_iso
+# set_top isolation_of
 
 # Load source code for synthesis
 add_files src/event_processor.cc
@@ -52,8 +53,8 @@ set_part {xcu50-fsvh2104-2-e}
 create_clock -period 5
 
 # Run
-csim_design
+# csim_design
 csynth_design
 # export_design -flow syn -format xo
-export_design -flow impl -format ip_catalog -rtl vhdl
+# export_design -flow impl -format ip_catalog -rtl vhdl
 exit

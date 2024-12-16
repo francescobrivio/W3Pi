@@ -10,7 +10,15 @@ void isolation_of(
     Puppi::pt_t &abs_iso
 ) {
     #pragma HLS ARRAY_PARTITION variable=particles complete
-    #pragma HLS pipeline II=9
+    // ---------------------
+    // |II|latency|lut%util|
+    // | 1|      8|       6|
+    // | 3|     10|       3|
+    // | 5|     12|       2|
+    // | 7|     14|       2|
+    // | 9|     16|       2|
+    // ---------------------
+    #pragma HLS pipeline II=3
 
     const dr2_t dr2_max = float_dr_to_ap_dr2(0.4);
     const dr2_t dr2_veto = float_dr_to_ap_dr2(0.1);
@@ -41,11 +49,12 @@ void calculate_iso(
     #pragma HLS ARRAY_PARTITION variable=out_selected_iso complete
     for (unsigned int i = 0; i < NPUPPI_SEL; ++i) {
         // the greater the factor, the better the latency, but it uses more resources
+        // these numbers were obtained with `isolation_of` II=3
         // |factor|latency|lut%util|
-        // |     1|     73|       2|
-        // |     2|     55|       4|
-        // |     3|     46|       7|
-        // |     7|     16|      17|
+        // |     1|     31|       3|
+        // |     3|     22|      10|
+        // |     5|     19|      17|
+        // |     7|     10|      25|
         #pragma HLS unroll factor=3
         isolation_of(selected[i], particles, out_selected_iso[i]);
     }
