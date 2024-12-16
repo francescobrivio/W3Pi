@@ -20,7 +20,7 @@ open_project -reset "proj_v1"
 #set_top get_highest_score
 #set_top EventProcessor
 #set_top EventProcessor7bis
-#set_top EventProcessor7f
+# set_top EventProcessor7f
 set_top calculate_iso
 
 # Load source code for synthesis
@@ -54,6 +54,6 @@ create_clock -period 5
 # Run
 csim_design
 csynth_design
-#export_design -flow syn -format xo
-#export_design -flow impl -format ip_catalog -rtl vhdl
+# export_design -flow syn -format xo
+export_design -flow impl -format ip_catalog -rtl vhdl
 exit
