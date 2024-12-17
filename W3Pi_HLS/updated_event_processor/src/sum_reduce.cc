@@ -1,5 +1,3 @@
-#ifndef SUM_REDUCE_H
-#define SUM_REDUCE_H
 #include "sum_reduce.h"
 
 template<int N>
@@ -16,4 +14,3 @@ Puppi::pt_t SumReduceAll(const Puppi::pt_t in[NPUPPI_MAX]) {
     #pragma HLS pipeline ii=1
     return SumReduce<NPUPPI_MAX>(in);
 }
-#endif
