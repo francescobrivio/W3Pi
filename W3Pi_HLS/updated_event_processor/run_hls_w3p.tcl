@@ -20,14 +20,19 @@ open_project -reset "proj_v1"
 #set_top get_highest_score
 #set_top EventProcessor
 #set_top EventProcessor7bis
-set_top EventProcessor7f
+# set_top EventProcessor7f
+set_top calculate_iso
+# set_top isolation_of
 
 # Load source code for synthesis
 add_files src/event_processor.cc
+add_files src/isolation.cc
+add_files src/sum_reduce.cc
 
 # Load source code for the testbench
 #  - add `-cflags "-DON_W3P"` to testbench --> not sure what for
 add_files -tb event_processor_ref.cc
+add_files -tb isolation_ref.cc
 add_files -tb testbench.cc
 add_files -tb ../data/Puppi_w3p_PU200.dump
 add_files -tb BDT/conifer_binary_featV4_finalFit_v5.json
@@ -48,8 +53,8 @@ set_part {xcu50-fsvh2104-2-e}
 create_clock -period 5
 
 # Run
-csim_design
-#csynth_design
-#export_design -flow syn -format xo
-#export_design -flow impl -format ip_catalog -rtl vhdl
+# csim_design
+csynth_design
+# export_design -flow syn -format xo
+# export_design -flow impl -format ip_catalog -rtl vhdl
 exit

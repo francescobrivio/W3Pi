@@ -1,4 +1,5 @@
 #include "src/event_processor.h"
+#include "src/isolation.h"
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -28,7 +29,8 @@
 //  100 : EventProcessor
 //  101 : EventProcessor7bis
 //  102 : EventProcessor7f
-#define DUT 102
+//  200 : calculate_iso
+#define DUT 200
 
 // Pretty print of array
 template<typename T>
@@ -158,6 +160,8 @@ int main(int argc, char **argv) {
         Puppi merged_ref[NPUPPI_MAX];
         Puppi selected_fw[NPUPPI_SEL];
         Puppi selected_ref[NPUPPI_SEL];
+        Puppi::pt_t selected_iso_fw[NPUPPI_SEL];
+        Puppi::pt_t selected_iso_ref[NPUPPI_SEL];
         cos_t  cosphi;
         cosh_t cosheta;
         mass_t mass_fw;
@@ -474,6 +478,27 @@ int main(int argc, char **argv) {
             EventProcessor7f(inputs, max_score_fw);
             EventProcessor_ref(inputs, max_score_ref);
         }
+        else if (DUT == 200)
+        {
+            masker(inputs, masked_fw);
+            masker_ref(inputs, masked_ref);
+
+            slimmer(inputs, masked_fw, slimmed_fw);
+            slimmer_ref(inputs, masked_ref, slimmed_ref);
+
+            orderer7f(slimmed_fw, ordered2_fw);
+            orderer7bis_ref(slimmed_ref, ordered_ref1, ordered_ref2, ordered_ref3, ordered_ref4,
+                                         ordered_ref5, ordered_ref6, ordered_ref7, ordered_ref8);
+
+            merger7f(ordered2_fw, merged_fw);
+            merger_ref(slimmed_ref, merged_ref);
+
+            selector(merged_fw, selected_fw);
+            selector_ref(merged_ref, selected_ref);
+
+            calculate_iso(selected_fw, inputs, selected_iso_fw);
+            calculate_iso_ref(selected_ref, inputs, selected_iso_ref);
+        }
 
         // Post calls printout
         if (OUTPUT_DEBUG)
@@ -641,6 +666,23 @@ int main(int argc, char **argv) {
                 std::cout << "  Max score:" << std::endl;
                 std::cout << "   FW : " << max_score_fw << std::endl;
                 std::cout << "   REF: " << max_score_ref << std::endl;
+            }
+            else if (DUT == 200)
+            {
+                std::cout << "- calculate_iso:" << std::endl;
+                std::cout << "  isolation:" << std::endl;
+                std::cout << "   FW : ";
+                for (unsigned int i=0; i<NPUPPI_SEL; i++)
+                {
+                    std::cout << selected_iso_fw[i] << " ";
+                }
+                std::cout << std::endl;
+                std::cout << "   REF: ";
+                for (unsigned int i=0; i<NPUPPI_SEL; i++)
+                {
+                    std::cout << selected_iso_ref[i] << " ";
+                }
+                std::cout << std::endl;
             }
         }
 
@@ -941,6 +983,18 @@ int main(int argc, char **argv) {
             {
                 std::cout << "---> EP Different -> FW: " << max_score_fw << " REF: " << max_score_ref << std::endl;
                 //return 1; // FIXME: uncomment when ordering and invariant mass kaernels are fixed
+            }
+        }
+        else if (DUT == 200)
+        {
+            for (unsigned int i=0; i<NPUPPI_SEL; i++)
+            {
+                if (selected_iso_fw[i] != selected_iso_ref[i])
+                {
+                    std::cout << "---> Different isolation at " << i << ": -> FW: " << selected_iso_fw[i] << " REF: " << selected_iso_ref[i] << std::endl;
+                    // FIXME: uncomment when ordering of same pT candidates in FW is fixed
+                    // return 1;
+                }
             }
         }
 

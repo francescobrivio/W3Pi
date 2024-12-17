@@ -50,7 +50,12 @@ void get_highest_score (w3p_bdt::score_t BDT_scores[NTRIPLETS], w3p_bdt::score_t
 void EventProcessor    (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
 void EventProcessor7bis(const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
 void EventProcessor7f  (const Puppi input[NPUPPI_MAX], w3p_bdt::score_t & max_score);
-
+// ---------------------
+// -- DeltaR methods ---
+// ---------------------
+ap_int<Puppi::eta_t::width+1> deltaEta (Puppi::eta_t eta1, Puppi::eta_t eta2);
+inline dr2_t deltaR2 (const Puppi & p1, const Puppi & p2);
+inline dr2_t deltaR2_slow (const Puppi & p1, const Puppi & p2);
 // ---------------------
 // ----- REFERENCE -----
 // ---------------------
@@ -72,6 +77,7 @@ void orderer7bis_ref   (const Puppi slimmed[NPUPPI_MAX],
                         Puppi ordered7 [NSPLITS], Puppi ordered8 [NSPLITS]);
 void merger_ref        (Puppi slimmed[NPUPPI_MAX], Puppi merged[NPUPPI_MAX]);
 void selector_ref      (const Puppi merged[NPUPPI_MAX], Puppi selected[NPUPPI_SEL]);
+inline dr2_t deltaR2_ref (const Puppi & p1, const Puppi & p2);
 mass_t get_pair_mass_ref   (const Puppi & p1, const Puppi & p2);
 void get_triplet_inputs_ref(const Puppi selected[NPUPPI_SEL], idx_t idx0, idx_t idx1, idx_t idx2, w3p_bdt::input_t BDT_inputs[w3p_bdt::n_features]);
 void get_event_inputs_ref  (const Puppi selected[NPUPPI_SEL], w3p_bdt::input_t BDT_inputs[NTRIPLETS][w3p_bdt::n_features]);
